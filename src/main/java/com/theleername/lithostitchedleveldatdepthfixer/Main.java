@@ -10,18 +10,24 @@ import org.slf4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class Main {
+	public static final int MAX_DEPTH = 4096;
 	private static final Logger LOGGER = LogUtils.getLogger();
+	private static final Set<Path> FIXED = ConcurrentHashMap.newKeySet();
 
 	public static void fix(Path levelDat) {
-		try {
-			if (levelDat == null)
-				return;
-			if (!Files.exists(levelDat))
-				return;
+		if (levelDat == null)
+			return;
+		if (!FIXED.add(levelDat.toAbsolutePath()))
+			return;
+		if (!Files.exists(levelDat))
+			return;
 
-			CompoundTag root = NbtIo.readCompressed(levelDat, NbtAccounter.unlimitedHeap());
+		try {
+			CompoundTag root = NbtIo.readCompressed(levelDat, new NbtAccounter(Long.MAX_VALUE, MAX_DEPTH));
 			CompoundTag data = root.getCompound("Data");
 			CompoundTag worldGen = data.getCompound("WorldGenSettings");
 			CompoundTag dimensions = worldGen.getCompound("dimensions");
@@ -41,6 +47,7 @@ public final class Main {
 
 			sequence.remove(1);
 			NbtIo.writeCompressed(root, levelDat);
+			FIXED.add(levelDat);
 			LOGGER.info("Removed lithostitched transient_merged from {}", levelDat);
 		} catch (Exception e) {
 			LOGGER.error("Failed to repair level.dat", e);
