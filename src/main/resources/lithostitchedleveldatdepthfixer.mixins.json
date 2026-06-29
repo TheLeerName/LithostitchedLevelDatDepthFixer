@@ -2,7 +2,9 @@
   "required": true,
   "package": "com.theleername.lithostitchedleveldatdepthfixer.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": [
+    "LevelStorageSourceMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },
