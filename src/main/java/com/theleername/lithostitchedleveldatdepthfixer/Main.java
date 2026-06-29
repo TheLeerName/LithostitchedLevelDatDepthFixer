@@ -31,24 +31,37 @@ public final class Main {
 			CompoundTag data = root.getCompound("Data");
 			CompoundTag worldGen = data.getCompound("WorldGenSettings");
 			CompoundTag dimensions = worldGen.getCompound("dimensions");
-			CompoundTag overworld = dimensions.getCompound("minecraft:overworld");
-			CompoundTag generator = overworld.getCompound("generator");
-			CompoundTag settings = generator.getCompound("settings");
-			CompoundTag surfaceRule = settings.getCompound("surface_rule");
-			ListTag sequence = surfaceRule.getList("sequence", Tag.TAG_COMPOUND);
+			for (var dimensionName : dimensions.getAllKeys()) {
+				if (dimensionName == null) continue;
+				if (!dimensions.contains(dimensionName, Tag.TAG_COMPOUND)) continue;
+				CompoundTag dimension = dimensions.getCompound(dimensionName);
 
-			Tag tag = sequence.get(1);
-			if (!(tag instanceof CompoundTag compound))
-				return;
-			if (!compound.contains("type"))
-				return;
-			if (!compound.getString("type").equals("lithostitched:transient_merged"))
-				return;
+				if (!dimension.contains("generator", Tag.TAG_COMPOUND)) continue;
+				CompoundTag generator = dimension.getCompound("generator");
 
-			sequence.remove(1);
+				if (!generator.contains("settings", Tag.TAG_COMPOUND)) continue;
+				CompoundTag settings = generator.getCompound("settings");
+
+				if (!settings.contains("surface_rule", Tag.TAG_COMPOUND)) continue;
+				CompoundTag surfaceRule = settings.getCompound("surface_rule");
+
+				if (!surfaceRule.contains("sequence", Tag.TAG_LIST)) continue;
+				ListTag sequence = surfaceRule.getList("sequence", Tag.TAG_COMPOUND);
+
+				if (sequence.size() < 2) continue;
+				Tag tag = sequence.get(1);
+				if (!(tag instanceof CompoundTag compound))
+					continue;
+					if (!compound.contains("type"))
+					continue;
+				if (!compound.getString("type").equals("lithostitched:transient_merged"))
+					continue;
+
+				sequence.remove(1);
+			}
 			NbtIo.writeCompressed(root, levelDat);
 			FIXED.add(levelDat);
-			LOGGER.info("Removed lithostitched transient_merged from {}", levelDat);
+			LOGGER.info("Removed lithostitched:transient_merged from {}", levelDat);
 		} catch (Exception e) {
 			LOGGER.error("Failed to repair level.dat", e);
 		}
